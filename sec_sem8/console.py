@@ -1,12 +1,15 @@
 import sys
-from typing import Iterable, List, Optional
+from typing import Iterable
 
 import environs
-import prettytable
+from rich.table import Table
+from rich.panel import Panel
+from rich.console import Console
+from rich import box
 import typer
 
 from sec_sem8.entities import User, UserExistsError
-from sec_sem8.impl import Md5Hash, SqliteDatabase
+from sec_sem8.impl import Sha1Hasher, SqliteDatabase
 
 env = environs.Env()
 env.read_env()
@@ -19,16 +22,39 @@ class Config:
 app = typer.Typer()
 
 database = SqliteDatabase(Config.SQLITE_PATH)
-hasher = Md5Hash()
+hasher = Sha1Hasher()
+
+console = Console()
 
 
 def print_users(users: Iterable[User]):
-    table = prettytable.PrettyTable()
-    table.field_names = ["username", "password_hash"]
-    for user in users:
-        table.add_row((user.username, user.password_hash))
+    table = Table(
+        "username",
+        "password hash",
+        box=box.ROUNDED,
+    )
 
-    print(table)
+    for user in users:
+        table.add_row(user.username, user.password_hash)
+
+    console.print(Panel(table, title="users", border_style="white", expand=False))
+
+
+def print_error(text: str):
+    console.print(
+        Panel(
+            text,
+            title="Error",
+            title_align="left",
+            border_style="red",
+        )
+    )
+
+
+def print_confirmation(text: str):
+    console.print(
+        Panel(text, title="Confirmation", title_align="left", border_style="green")
+    )
 
 
 @app.command(name="list")
@@ -41,17 +67,21 @@ def get(username: str):
     if (user := database.find_user(username)) is not None:
         print_users([user])
     else:
-        print("no such user exists")
+        print_error("no such user exists")
 
 
 @app.command()
-def add(username: str, password: str):
+def add(username: str, password: str, override: bool = False):
     user = User(username=username, password_hash=hasher(password))
+
+    if override:
+        database.delete_user(username)
+
     try:
         database.add_user(user)
-        print(f"added user {username}")
+        print_confirmation(f"saved user {username} to database")
     except UserExistsError:
-        print("user already exists")
+        print_error("this user already exists, use --force to do this anyway")
         sys.exit(1)
 
 

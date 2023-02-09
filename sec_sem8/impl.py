@@ -1,13 +1,13 @@
-from hashlib import md5
+from hashlib import sha1
 from sqlite3 import IntegrityError, Row, connect
 from typing import Iterable, Optional
 
 from sec_sem8.entities import Database, Hasher, PasswordHash, User, UserExistsError
 
 
-class Md5Hash(Hasher):
+class Sha1Hasher(Hasher):
     def __call__(self, password: str) -> PasswordHash:
-        return PasswordHash(md5(password.encode()).hexdigest())
+        return PasswordHash(sha1(password.encode()).hexdigest())
 
 
 class SqliteDatabase(Database):
@@ -49,3 +49,7 @@ class SqliteDatabase(Database):
                 username=row["name"], password_hash=PasswordHash(row["password_hash"])
             )
         return None
+
+    def delete_user(self, username: str) -> None:
+        cursor = self.db.cursor()
+        cursor.execute("DELETE FROM users WHERE name=?", (username,))

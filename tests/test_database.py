@@ -39,3 +39,8 @@ def test_database_should_raise_on_duplicate_user(database_with_user, user):
 
 def test_database_allows_listing_users(database_with_user, user):
     assert list(database_with_user.list_users()) == [user]
+
+
+def test_database_allows_deleting_user(database_with_user):
+    database_with_user.delete_user("user")
+    assert database_with_user.find_user("user") is None

@@ -58,3 +58,11 @@ class Database(ABC):
         Returns:
             Optional[User]: user with such username, if any
         """
+
+    def delete_user(self, username: str) -> None:
+        """delete user with provided username if it exists
+
+        Args:
+            username (str): username of user to delete
+
+        """
