@@ -1,0 +1,28 @@
+[tool.poetry]
+name = "sec-sem8"
+version = "0.1.0"
+description = ""
+authors = ["Vladimir Redkin <vsredkin01@gmail.com>"]
+readme = "README.md"
+packages = [{ include = "sec_sem8" }]
+
+[tool.poetry.dependencies]
+python = "^3.10"
+pydantic = "^1.10.4"
+typer = { extras = ["all"], version = "^0.7.0" }
+environs = "^9.5.0"
+prettytable = "^3.6.0"
+
+
+[tool.poetry.group.dev.dependencies]
+mypy = "^1.0.0"
+isort = "^5.12.0"
+black = "^23.1.0"
+pytest = "^7.2.1"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.scripts]
+console = "sec_sem8.console:main"
