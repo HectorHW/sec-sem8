@@ -2,11 +2,11 @@ import sys
 from typing import Iterable
 
 import environs
-from rich.table import Table
-from rich.panel import Panel
-from rich.console import Console
-from rich import box
 import typer
+from rich import box
+from rich.console import Console
+from rich.panel import Panel
+from rich.table import Table
 
 from sec_sem8.entities import User, UserExistsError
 from sec_sem8.impl import Sha1Hasher, SqliteDatabase
