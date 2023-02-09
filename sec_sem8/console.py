@@ -79,10 +79,19 @@ def add(username: str, password: str, override: bool = False):
 
     try:
         database.add_user(user)
-        print_confirmation(f"saved user {username} to database")
+        print_confirmation(f"saved user '{username}' to database")
     except UserExistsError:
         print_error("this user already exists, use --force to do this anyway")
         sys.exit(1)
+
+
+@app.command()
+def delete(username: str):
+    if database.find_user(username) is None:
+        print_error(f"user '{username}' does not exist")
+    else:
+        database.delete_user(username)
+        print_confirmation(f"deleted user '{username}'")
 
 
 def main():
