@@ -53,3 +53,4 @@ class SqliteDatabase(Database):
     def delete_user(self, username: str) -> None:
         cursor = self.db.cursor()
         cursor.execute("DELETE FROM users WHERE name=?", (username,))
+        self.db.commit()
