@@ -45,7 +45,6 @@ class SqliteDatabase(Database):
         cursor.execute("SELECT * FROM users WHERE name=?", (username,))
 
         if (row := cursor.fetchone()) is not None:
-            print(row)
             return User(
                 username=row["name"], password_hash=PasswordHash(row["password_hash"])
             )
