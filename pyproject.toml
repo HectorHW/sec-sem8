@@ -12,6 +12,7 @@ pydantic = "^1.10.4"
 typer = { extras = ["all"], version = "^0.7.0" }
 environs = "^9.5.0"
 rich = "<13.0.0"
+pysimplegui = "^4.60.4"
 
 
 [tool.poetry.group.dev.dependencies]
