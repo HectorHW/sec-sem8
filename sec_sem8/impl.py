@@ -12,7 +12,7 @@ class Sha1Hasher(Hasher):
 
 class SqliteDatabase(Database):
     def __init__(self, db_path: str) -> None:
-        self.db = connect(db_path)
+        self.db = connect(db_path, check_same_thread=False)
         self.db.row_factory = Row
         cursor = self.db.cursor()
         cursor.execute(
