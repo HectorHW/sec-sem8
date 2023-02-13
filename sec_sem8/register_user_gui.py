@@ -1,13 +1,13 @@
 import PySimpleGUI as sg
-
+from typing import Any
 from sec_sem8 import impl, entities
 
 db = impl.SqliteDatabase("users.sqlite")
 hasher = impl.Sha1Hasher()
 
-style_params = dict(font=("Ubuntu Mono", 24))
+style_params: dict[str, Any] = dict(font=("Ubuntu Mono", 24))
 
-block_params = dict(expand_x=True, expand_y=True, **style_params)
+block_params: dict[str, Any] = dict(expand_x=True, expand_y=True, **style_params)
 
 
 username_form = sg.InputText(key="username", **style_params, size=(25, 1))
@@ -18,7 +18,7 @@ register_button = sg.Button("register", key="REGISTER", **style_params)
 
 user_register = sg.Tab(
     title="register",
-    layout=[
+    layout=[  # type: ignore
         [sg.Text("username: ", **style_params), username_form],
         [sg.Text("password: ", **style_params), password_form],
         [register_button],
@@ -52,7 +52,8 @@ def update_table():
 
 
 while True:
-    event, values = window.read()
+    # we are using read without timeout
+    event, values = window.read()  # type: ignore
 
     if event == sg.WIN_CLOSED:
         break
