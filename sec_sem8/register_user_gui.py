@@ -39,7 +39,7 @@ users_table = sg.Table(
 
 user_list = sg.Tab(title="users", layout=[[users_table]], **block_params)
 
-tabs = sg.TabGroup([[user_register, user_list]], **block_params)
+tabs = sg.TabGroup([[user_register, user_list]], enable_events=True, **block_params)
 
 window = sg.Window(
     "register", [[tabs]], size=(1000, 500), resizable=True, finalize=True
@@ -61,6 +61,9 @@ while True:
         username = values["username"].strip()
         if not username:
             sg.popup("username cannot be empty")
+            continue
+        if len(username) >= 60:
+            sg.Popup("username is too long")
             continue
         password = values["password"].strip()
         if not password:
