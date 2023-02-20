@@ -1,18 +1,22 @@
 import PySimpleGUI as sg
 import httpx
 from sec_sem8 import messages, impl
-import pydantic
 
-username_form = sg.InputText(key="username")
-password_form = sg.InputText(key="password", password_char="*")
+
+fontsize = 35
+
+
+username_form = sg.InputText(key="username", font=fontsize)
+password_form = sg.InputText(key="password", password_char="*", font=fontsize)
+
 
 form = [
-    [sg.Text("username: "), username_form],
-    [sg.Text("password: "), password_form],
-    [sg.Button("login", key="LOGIN")],
+    [sg.Text("username: ", font=fontsize), username_form],
+    [sg.Text("password: ", font=fontsize), password_form],
+    [sg.Button("login", key="LOGIN", font=fontsize)],
 ]
 
-window = sg.Window(title="client", layout=form)
+window = sg.Window(title="client", layout=form, font=fontsize)
 
 hasher = impl.Sha1Hasher()
 
