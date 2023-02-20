@@ -35,6 +35,7 @@ def answer_challenge(req: AuthAnswer):
     assert user is not None
 
     expected = solve_task(user.password_hash, maybe_used_nonce)  # type: ignore
+    del nonces[username]
 
     if provided == expected:
         return "ok"
