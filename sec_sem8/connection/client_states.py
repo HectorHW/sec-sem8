@@ -1,9 +1,10 @@
-from sec_sem8.connection import server_messages
-from pydantic import BaseModel
-from abc import ABC, abstractmethod
-from sec_sem8.connection import client_messages
-from sec_sem8.hash_task import PasswordHash, solve_task
 import random
+from abc import ABC, abstractmethod
+
+from pydantic import BaseModel
+
+from sec_sem8.connection import client_messages, server_messages
+from sec_sem8.hash_task import PasswordHash, solve_task
 from sec_sem8.rc4 import RC4
 
 

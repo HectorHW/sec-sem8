@@ -1,5 +1,6 @@
-from pydantic import BaseModel, parse_raw_as
 from typing import Literal, Union
+
+from pydantic import BaseModel, parse_raw_as
 
 
 class BaseServerMessage(BaseModel, extra="forbid"):

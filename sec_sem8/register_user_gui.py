@@ -1,6 +1,8 @@
-import PySimpleGUI as sg
 from typing import Any
-from sec_sem8 import impl, entities
+
+import PySimpleGUI as sg
+
+from sec_sem8 import entities, impl
 
 db = impl.SqliteDatabase("users.sqlite")
 hasher = impl.Sha1Hasher()

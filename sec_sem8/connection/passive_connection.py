@@ -1,26 +1,24 @@
+import base64
 from asyncio.streams import StreamReader, StreamWriter
+from typing import NoReturn, Optional
 
-from sec_sem8.connection.server_states import (
-    Start,
-    ErrorState,
-    BaseState,
-    World,
-    DiffieDone,
-    Closed,
-)
 from sec_sem8.connection.client_messages import (
-    parse,
-    ClientError,
-    UnknownAnswer,
     BaseClientMessage,
     ClientData,
+    ClientError,
     ClientGoodbye,
+    UnknownAnswer,
+    parse,
 )
-
 from sec_sem8.connection.server_messages import BaseServerMessage
-
-from typing import NoReturn, Optional
-import base64
+from sec_sem8.connection.server_states import (
+    BaseState,
+    Closed,
+    DiffieDone,
+    ErrorState,
+    Start,
+    World,
+)
 from sec_sem8.rc4 import xor_bytes
 
 

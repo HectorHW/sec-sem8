@@ -1,9 +1,10 @@
-from pydantic import BaseModel
-from sec_sem8.connection import server_messages
 import random
-from sec_sem8.connection import client_messages
-from sec_sem8.hash_task import PasswordHash, solve_task
 from abc import ABC, abstractmethod
+
+from pydantic import BaseModel
+
+from sec_sem8.connection import client_messages, server_messages
+from sec_sem8.hash_task import PasswordHash, solve_task
 from sec_sem8.rc4 import RC4
 
 TransitionResult = tuple[server_messages.BaseServerMessage, "BaseState"]

@@ -1,7 +1,8 @@
-from typing import List
 import re
 import subprocess
 from math import gcd
+from typing import List
+
 from sec_sem8.primes import get_random
 
 

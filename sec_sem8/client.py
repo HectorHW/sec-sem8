@@ -1,12 +1,13 @@
-import PySimpleGUI as sg
-from sec_sem8.impl import Sha1Hasher
 import sys
+
+import PySimpleGUI as sg
 
 from sec_sem8.connection.active_connection import (
     ActiveConnection,
-    UnknownUserError,
     IncorrectPasswordError,
+    UnknownUserError,
 )
+from sec_sem8.impl import Sha1Hasher
 
 try:
     SERVER_ADDRESS = sys.argv[1]

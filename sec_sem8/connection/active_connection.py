@@ -1,28 +1,28 @@
-from sec_sem8.connection.client_states import (
-    UserData,
-    BaseClientState,
-    ErrorState,
-    DiffieDone,
-    StartState,
-    NonceRequested,
-    Closed,
-)
-from sec_sem8.connection.server_messages import (
-    BaseServerMessage,
-    parse,
-    ServerError,
-    UnknownMessage,
-)
+import asyncio
+import base64
+from typing import NoReturn
 
 from sec_sem8.connection.client_messages import (
     BaseClientMessage,
     ClientData,
     ClientGoodbye,
 )
+from sec_sem8.connection.client_states import (
+    BaseClientState,
+    Closed,
+    DiffieDone,
+    ErrorState,
+    NonceRequested,
+    StartState,
+    UserData,
+)
+from sec_sem8.connection.server_messages import (
+    BaseServerMessage,
+    ServerError,
+    UnknownMessage,
+    parse,
+)
 from sec_sem8.rc4 import xor_bytes
-from typing import NoReturn
-import asyncio
-import base64
 
 
 class UnknownUserError(ValueError):

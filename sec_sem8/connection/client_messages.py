@@ -1,5 +1,7 @@
 from typing import Literal, Union
+
 from pydantic import BaseModel, parse_raw_as
+
 from sec_sem8.hash_task import PasswordHash
 
 

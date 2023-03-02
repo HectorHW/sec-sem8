@@ -1,17 +1,17 @@
-from sec_sem8.connection.passive_connection import PassiveConnection
-from sec_sem8.connection.passive_connection import World
-from sec_sem8.impl import SqliteDatabase
 import asyncio
-from sec_sem8.hash_task import PasswordHash
 from functools import cache
+
+from sec_sem8.connection.passive_connection import PassiveConnection, World
+from sec_sem8.hash_task import PasswordHash
+from sec_sem8.impl import SqliteDatabase
 
 database = SqliteDatabase("users.sqlite")
 
 
 @cache
 def get_diffie_hellman_params() -> tuple[int, int]:
-    from sec_sem8.primes import get_random_prime
     from sec_sem8.diffie_hellman import find_primitive_root
+    from sec_sem8.primes import get_random_prime
 
     prime = get_random_prime(64)
     g = find_primitive_root(32, prime)
