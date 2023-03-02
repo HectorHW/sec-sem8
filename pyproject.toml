@@ -13,10 +13,6 @@ typer = { extras = ["all"], version = "^0.7.0" }
 environs = "^9.5.0"
 rich = "<13.0.0"
 pysimplegui = "^4.60.4"
-fastapi = "^0.91.0"
-expiringdict = "^1.2.2"
-uvicorn = "^0.20.0"
-httpx = "^0.23.3"
 
 
 [tool.poetry.group.dev.dependencies]
