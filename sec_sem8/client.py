@@ -1,11 +1,17 @@
 import PySimpleGUI as sg
 from sec_sem8.impl import Sha1Hasher
+import sys
 
 from sec_sem8.connection.active_connection import (
     ActiveConnection,
     UnknownUserError,
     IncorrectPasswordError,
 )
+
+try:
+    SERVER_ADDRESS = sys.argv[1]
+except:
+    SERVER_ADDRESS = "127.0.0.1"
 
 fontsize = 35
 
@@ -51,7 +57,14 @@ while True:
             username = username
             password_hash = hasher(password)
 
-        conn = ActiveConnection(user)  # type: ignore
+        try:
+            if conn is not None and conn.is_open():
+                conn.say_goodbye()
+            conn = ActiveConnection(user, server=SERVER_ADDRESS)  # type: ignore
+
+        except ConnectionRefusedError:
+            sg.Popup("could not connect to server")
+            continue
 
         try:
             ok = conn.handshake()

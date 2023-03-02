@@ -45,5 +45,8 @@ AnyMessage = Union[  # type: ignore
 ]
 
 
-def parse(data: str) -> BaseClientMessage:
-    return parse_raw_as(AnyMessage, data)  # type: ignore
+def parse(data: str) -> BaseClientMessage | UnknownAnswer:
+    try:
+        return parse_raw_as(AnyMessage, data)  # type: ignore
+    except Exception:
+        return UnknownAnswer()

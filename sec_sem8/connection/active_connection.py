@@ -120,6 +120,8 @@ class ActiveConnection:
             )
         self._adapt(self._write_message(ClientGoodbye()))
         self.state = Closed()
+        self.writer.close()
+        self._adapt(self.writer.wait_closed())
 
     def is_open(self) -> bool:
         return isinstance(self.state, DiffieDone)

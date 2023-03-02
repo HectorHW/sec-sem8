@@ -37,8 +37,11 @@ AnyMessage = Union[  # type: ignore
 ]
 
 
-def parse(data: str) -> BaseServerMessage:
-    return parse_raw_as(AnyMessage, data)  # type: ignore
+def parse(data: str) -> BaseServerMessage | UnknownMessage:
+    try:
+        return parse_raw_as(AnyMessage, data)  # type: ignore
+    except Exception:
+        return UnknownMessage()
 
 
 if __name__ == "__main__":
