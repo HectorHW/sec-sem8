@@ -8,7 +8,9 @@ TaskRequested --> PasswordSolved: Q passwd_hash \nA <g, p, A>
 
 PasswordSolved --> DiffieDone: Q < B > \nA ok
 
-DiffieDone --> [*]
+DiffieDone --> DiffieDone: Q message
+
+DiffieDone --> [*]: Q goodbye
 
 Start -[dotted]-> Error
 TaskRequested -[dotted]-> Error

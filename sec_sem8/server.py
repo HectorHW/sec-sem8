@@ -53,8 +53,11 @@ async def handle_client(reader, writer):
 
     print(f"initiated connection with {ok.username}, shared key is {ok.shared_key}")
 
-    writer.close()
-    await writer.wait_closed()
+    while True:
+        maybe_message = await connection.read_message()
+        if maybe_message is None:
+            break
+        print(ok.username, "==>", maybe_message)
 
     print(f"closed connection with {ok.username}")
 

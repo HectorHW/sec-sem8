@@ -4,6 +4,7 @@ from abc import ABC, abstractmethod
 from sec_sem8.connection import client_messages
 from sec_sem8.hash_task import PasswordHash, solve_task
 import random
+from sec_sem8.rc4 import RC4
 
 
 class UserData(ABC):
@@ -94,8 +95,13 @@ class DiffieStarted(BaseClientState):
 
         return client_messages.DiffieAnswer(
             client_public_value=client_public
-        ), DiffieDone(key=key)
+        ), DiffieDone(key=key, rc4=RC4(key))
 
 
-class DiffieDone(BaseClientState):
+class DiffieDone(BaseClientState, arbitrary_types_allowed=True):
     key: int
+    rc4: RC4
+
+
+class Closed(BaseClientState):
+    pass

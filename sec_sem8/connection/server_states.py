@@ -4,8 +4,7 @@ import random
 from sec_sem8.connection import client_messages
 from sec_sem8.hash_task import PasswordHash, solve_task
 from abc import ABC, abstractmethod
-from typing import Type
-
+from sec_sem8.rc4 import RC4
 
 TransitionResult = tuple[server_messages.BaseServerMessage, "BaseState"]
 
@@ -117,10 +116,15 @@ class PasswordSolved(BaseState):
     ) -> TransitionResult:
         shared_key = pow(message.client_public_value, self.server_secret, self.p)
         return server_messages.DiffieOk(), DiffieDone(
-            username=self.username, shared_key=shared_key
+            username=self.username, shared_key=shared_key, rc4=RC4(shared_key)
         )
 
 
-class DiffieDone(BaseState):
+class DiffieDone(BaseState, arbitrary_types_allowed=True):
     username: str
     shared_key: int
+    rc4: RC4
+
+
+class Closed(BaseState):
+    pass

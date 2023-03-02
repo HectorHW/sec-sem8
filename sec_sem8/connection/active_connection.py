@@ -5,6 +5,7 @@ from sec_sem8.connection.client_states import (
     DiffieDone,
     StartState,
     NonceRequested,
+    Closed,
 )
 from sec_sem8.connection.server_messages import (
     BaseServerMessage,
@@ -13,10 +14,15 @@ from sec_sem8.connection.server_messages import (
     UnknownMessage,
 )
 
-from sec_sem8.connection.client_messages import BaseClientMessage
-
+from sec_sem8.connection.client_messages import (
+    BaseClientMessage,
+    ClientData,
+    ClientGoodbye,
+)
+from sec_sem8.rc4 import xor_bytes
 from typing import NoReturn
 import asyncio
+import base64
 
 
 class UnknownUserError(ValueError):
@@ -43,7 +49,7 @@ class ActiveConnection:
         self.user_data = user_data
         self.state: BaseClientState = StartState()
 
-    async def error_bailout(self, message: str) -> NoReturn:
+    async def _error_bailout(self, message: str) -> NoReturn:
         self.state = ErrorState(message=message)
         self.writer.close()
         await self.writer.wait_closed()
@@ -54,20 +60,23 @@ class ActiveConnection:
 
         raise ValueError(message)
 
-    async def read_message(self) -> BaseServerMessage:
+    def _sync_bailout(self, message: str) -> NoReturn:  # type: ignore
+        self._adapt(self._error_bailout(message))
+
+    async def _read_message(self) -> BaseServerMessage:
         try:
             raw = await self.reader.readline()
             message = raw.decode().strip(" \n")
             decoded = parse(message)
             if isinstance(decoded, ServerError):
-                await self.error_bailout(decoded.text)
+                await self._error_bailout(decoded.text)
             if isinstance(decoded, UnknownMessage):
-                await self.error_bailout("got unknown message")
+                await self._error_bailout("got unknown message")
             return decoded
         except UnicodeDecodeError:
-            await self.error_bailout("decode error")
+            await self._error_bailout("decode error")
 
-    async def write_message(self, message: BaseClientMessage):
+    async def _write_message(self, message: BaseClientMessage):
         self.writer.write((message.json() + "\n").encode())
         await self.writer.drain()
 
@@ -77,18 +86,40 @@ class ActiveConnection:
     def handshake(self) -> DiffieDone:
         message, new_state = self.state.on_init(self.user_data)
         if not isinstance(new_state, NonceRequested):
-            self.loop.run_until_complete(
-                self.error_bailout("failure setting up connection at username transfer")
-            )
+            self._sync_bailout("failure setting up connection at username transfer")
         self.state = new_state
-        self.loop.run_until_complete(self.write_message(message))
+        self.loop.run_until_complete(self._write_message(message))
 
         while True:
-            server_message: BaseServerMessage = self._adapt(self.read_message())
+            server_message: BaseServerMessage = self._adapt(self._read_message())
             answer, new_state = self.state.on_message(server_message, self.user_data)
-            self._adapt(self.write_message(answer))
+            self._adapt(self._write_message(answer))
             self.state = new_state
             if isinstance(self.state, ErrorState):
-                self._adapt(self.error_bailout(self.state.message))
+                self._sync_bailout(self.state.message)
             if isinstance(self.state, DiffieDone):
                 return self.state
+
+    def write(self, text: str):
+        if not isinstance(self.state, DiffieDone):
+            self._sync_bailout(
+                f"called write in wrong state ({self.state.__class__.__name__})"
+            )
+        raw_message = text.encode()
+        gamma = self.state.rc4.produce_gamma(len(raw_message))
+
+        encrypted = xor_bytes(raw_message, gamma)
+        enc_str = base64.b64encode(encrypted).decode()
+        message = ClientData(data=enc_str)
+        self._adapt(self._write_message(message))
+
+    def say_goodbye(self):
+        if not isinstance(self.state, DiffieDone):
+            self._sync_bailout(
+                f"called goodbye in wrong state ({self.state.__class__.__name__})"
+            )
+        self._adapt(self._write_message(ClientGoodbye()))
+        self.state = Closed()
+
+    def is_open(self) -> bool:
+        return isinstance(self.state, DiffieDone)

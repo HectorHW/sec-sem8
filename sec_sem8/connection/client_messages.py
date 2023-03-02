@@ -31,6 +31,15 @@ class UnknownAnswer(BaseModel):
     pass
 
 
+class ClientData(BaseClientMessage):
+    id: Literal[3] = 3
+    data: str  # base64 encoded data
+
+
+class ClientGoodbye(BaseClientMessage):
+    id: Literal[4] = 4
+
+
 AnyMessage = Union[  # type: ignore
     tuple([*BaseClientMessage.__subclasses__(), UnknownAnswer])  # type: ignore
 ]
