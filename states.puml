@@ -1,0 +1,19 @@
+@startuml connection_states
+
+[*] --> Start
+
+Start --> TaskRequested : Q username \nA nonce
+
+TaskRequested --> PasswordSolved: Q passwd_hash \nA <g, p, A>
+
+PasswordSolved --> DiffieDone: Q < B > \nA ok
+
+DiffieDone --> [*]
+
+Start -[dotted]-> Error
+TaskRequested -[dotted]-> Error
+PasswordSolved -[dotted]-> Error
+
+Error --> [*]
+
+@enduml
