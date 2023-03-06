@@ -12,6 +12,8 @@ from sec_sem8.entities import ReadRequest, WriteRequest, Message
 import time
 from pydantic import parse_raw_as
 import threading
+from queue import Queue
+import contextlib
 
 try:
     SERVER_ADDRESS = sys.argv[1]
@@ -45,26 +47,26 @@ hasher = Sha1Hasher()
 
 conn = None
 
-sync = threading.Event()
+lock = threading.Lock()
+
+updates: Queue[list[Message]] = Queue()
 
 
 def pull_messages_work():
     while True:
-        if sync.is_set():
-            assert conn is not None
+        time.sleep(0.25)
+
+        with lock:
+            if conn is None or not conn.is_open():
+                continue
+
             conn.write(ReadRequest().json())
 
             raw_reply = conn.read()
             # print(raw_reply)
             messages = parse_raw_as(list[Message], raw_reply)
 
-            chat.update(
-                value="\n".join(
-                    map(lambda msg: f"{msg.author}: {msg.content}", messages)
-                )
-            )
-
-        time.sleep(0.25)
+            updates.put(messages)
 
 
 puller = threading.Thread(target=pull_messages_work, daemon=True)
@@ -72,11 +74,18 @@ puller.start()
 
 
 while True:
-    event, data = window.read()  # type: ignore
+    event, data = window.read(timeout=0.1)  # type: ignore
+
+    with contextlib.suppress(Exception):
+        update = updates.get_nowait()
+        chat.update(
+            value="\n".join(map(lambda msg: f"{msg.author}: {msg.content}", update))
+        )
+
     if event == sg.WIN_CLOSED:
-        sync.clear()
-        if conn is not None and conn.is_open():
-            conn.say_goodbye()
+        with lock:
+            if conn is not None and conn.is_open():
+                conn.say_goodbye()
         break
     elif event == "LOGIN":
         username = data["username"].strip()
@@ -92,34 +101,34 @@ while True:
             username = username
             password_hash = hasher(password)
 
-        try:
-            if conn is not None and conn.is_open():
-                conn.say_goodbye()
-            conn = ActiveConnection(user, server=SERVER_ADDRESS)  # type: ignore
+        with lock:
+            try:
+                if conn is not None and conn.is_open():
+                    conn.say_goodbye()
+                conn = ActiveConnection(user, server=SERVER_ADDRESS)  # type: ignore
 
-        except ConnectionRefusedError:
-            sg.Popup("could not connect to server")
-            continue
+            except ConnectionRefusedError:
+                sg.Popup("could not connect to server")
+                continue
 
-        try:
-            ok = conn.handshake()
+        with lock:
+            try:
+                ok = conn.handshake()
 
-        except UnknownUserError:
-            sg.Popup(f"unknown user")
-            continue
-        except IncorrectPasswordError:
-            sg.Popup("incorrect password")
-            continue
-        except ValueError as e:
-            sg.Popup(f"other connection error: {e}")
-            continue
+            except UnknownUserError:
+                sg.Popup(f"unknown user")
+                continue
+            except IncorrectPasswordError:
+                sg.Popup("incorrect password")
+                continue
+            except ValueError as e:
+                sg.Popup(f"other connection error: {e}")
+                continue
 
         text_form.update(disabled=False)
         send_btn.update(disabled=False)
         close_btn.update(disabled=False)
         sg.Popup(f"established connection, shared key: {ok.key}")
-
-        sync.set()
 
     elif event == "SEND":
         pass
@@ -127,10 +136,13 @@ while True:
 
         data = WriteRequest(content=text)
 
-        conn.write(data.json())  # type: ignore
+        with lock:
+            conn.write(data.json())  # type: ignore
     elif event == "CLOSE":
-        sync.clear()
-        conn.say_goodbye()  # type: ignore
+        time.sleep(0.5)
+        with lock:
+            conn.say_goodbye()  # type: ignore
+            conn = None
         text_form.update(disabled=True)
         send_btn.update(disabled=True)
         close_btn.update(disabled=True)
