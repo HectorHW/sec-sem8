@@ -12,6 +12,8 @@ DiffieDone --> DiffieDone: Q message
 
 DiffieDone --> [*]: Q goodbye
 
+DiffieDone -[dotted]-> Error
+
 Start -[dotted]-> Error
 TaskRequested -[dotted]-> Error
 PasswordSolved -[dotted]-> Error
