@@ -21,6 +21,7 @@ from sec_sem8.connection.server_messages import (
     ServerError,
     UnknownMessage,
     parse,
+    ServerCryptogramm,
 )
 from sec_sem8.rc4 import xor_bytes
 
@@ -98,7 +99,24 @@ class ActiveConnection:
             if isinstance(self.state, ErrorState):
                 self._sync_bailout(self.state.message)
             if isinstance(self.state, DiffieDone):
+                self._adapt(self._read_message())  # drop ok from server
                 return self.state
+
+    def read(self) -> str:
+        if not isinstance(self.state, DiffieDone):
+            self._sync_bailout(
+                f"called write in wrong state ({self.state.__class__.__name__})"
+            )
+        server_message: BaseServerMessage = self._adapt(self._read_message())
+        if not isinstance(server_message, ServerCryptogramm):
+            raise ValueError(
+                f"unexpected data when trying to read server response: {server_message}"
+            )
+
+        b64 = base64.b64decode(server_message.content)
+        gamma = self.state.rc4.produce_gamma(len(b64))
+        decrypted = xor_bytes(b64, gamma)
+        return decrypted.decode()
 
     def write(self, text: str):
         if not isinstance(self.state, DiffieDone):

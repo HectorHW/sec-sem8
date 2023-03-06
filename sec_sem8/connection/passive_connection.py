@@ -10,7 +10,7 @@ from sec_sem8.connection.client_messages import (
     UnknownAnswer,
     parse,
 )
-from sec_sem8.connection.server_messages import BaseServerMessage
+from sec_sem8.connection.server_messages import BaseServerMessage, ServerCryptogramm
 from sec_sem8.connection.server_states import (
     BaseState,
     Closed,
@@ -97,3 +97,14 @@ class PassiveConnection:
         await self._error_bailout(
             f"unexpected message type {message.__class__.__name__} after key exchange"
         )
+
+    async def write_message(self, message: str):
+        if not isinstance(self.state, DiffieDone):
+            await self._error_bailout("called read in wrong state ()")
+
+        encoded = message.encode()
+        gamma = self.state.rc4.produce_gamma(len(encoded))
+        encrypted = xor_bytes(encoded, gamma)
+        b64 = base64.b64encode(encrypted)
+        msg = ServerCryptogramm(content=b64.decode())
+        await self._write_message(msg)

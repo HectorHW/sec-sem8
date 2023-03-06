@@ -8,6 +8,10 @@ from sec_sem8.connection.active_connection import (
     UnknownUserError,
 )
 from sec_sem8.impl import Sha1Hasher
+from sec_sem8.entities import ReadRequest, WriteRequest, Message
+import time
+from pydantic import parse_raw_as
+import threading
 
 try:
     SERVER_ADDRESS = sys.argv[1]
@@ -20,6 +24,8 @@ fontsize = 35
 username_form = sg.InputText(key="username", font=fontsize)
 password_form = sg.InputText(key="password", password_char="*", font=fontsize)
 
+chat = sg.Multiline(size=(80, 20))
+
 text_form = sg.InputText(disabled=True, font=fontsize)
 
 send_btn = sg.Button("send", key="SEND", font=fontsize, disabled=True)
@@ -29,18 +35,46 @@ form = [
     [sg.Text("username: ", font=fontsize), username_form],
     [sg.Text("password: ", font=fontsize), password_form],
     [sg.Button("login", key="LOGIN", font=fontsize)],
+    [chat],
     [text_form, send_btn, close_btn],
 ]
 
-window = sg.Window(title="client", layout=form, font=fontsize)
+window = sg.Window(title="client", layout=form, font=fontsize, finalize=True)
 
 hasher = Sha1Hasher()
 
 conn = None
 
+sync = threading.Event()
+
+
+def pull_messages_work():
+    while True:
+        if sync.is_set():
+            assert conn is not None
+            conn.write(ReadRequest().json())
+
+            raw_reply = conn.read()
+            # print(raw_reply)
+            messages = parse_raw_as(list[Message], raw_reply)
+
+            chat.update(
+                value="\n".join(
+                    map(lambda msg: f"{msg.author}: {msg.content}", messages)
+                )
+            )
+
+        time.sleep(0.25)
+
+
+puller = threading.Thread(target=pull_messages_work, daemon=True)
+puller.start()
+
+
 while True:
     event, data = window.read()  # type: ignore
     if event == sg.WIN_CLOSED:
+        sync.clear()
         if conn is not None and conn.is_open():
             conn.say_goodbye()
         break
@@ -85,11 +119,17 @@ while True:
         close_btn.update(disabled=False)
         sg.Popup(f"established connection, shared key: {ok.key}")
 
+        sync.set()
+
     elif event == "SEND":
         pass
         text = text_form.get()
-        conn.write(text)  # type: ignore
+
+        data = WriteRequest(content=text)
+
+        conn.write(data.json())  # type: ignore
     elif event == "CLOSE":
+        sync.clear()
         conn.say_goodbye()  # type: ignore
         text_form.update(disabled=True)
         send_btn.update(disabled=True)

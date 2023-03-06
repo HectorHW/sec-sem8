@@ -29,6 +29,11 @@ class ServerError(BaseServerMessage):
     text: str
 
 
+class ServerCryptogramm(BaseServerMessage):
+    id: Literal[3] = 3
+    content: str
+
+
 class UnknownMessage(BaseModel):
     pass
 

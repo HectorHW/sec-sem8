@@ -1,7 +1,6 @@
 from abc import ABC, abstractmethod
-from typing import Iterable, NewType, Optional
-
-from pydantic import BaseModel
+from typing import Iterable, NewType, Optional, Literal
+from pydantic import BaseModel, parse_raw_as
 
 PasswordHash = NewType("PasswordHash", str)
 
@@ -66,3 +65,24 @@ class Database(ABC):
             username (str): username of user to delete
 
         """
+
+
+class Message(BaseModel):
+    author: str
+    content: str
+
+
+class WriteRequest(BaseModel):
+    id: Literal[1] = 1
+    content: str
+
+
+class ReadRequest(BaseModel):
+    id: Literal[2] = 2
+
+
+def parse_request(content: str) -> Optional[ReadRequest | WriteRequest]:
+    try:
+        return parse_raw_as(ReadRequest | WriteRequest, content)  # type: ignore
+    except:
+        return None

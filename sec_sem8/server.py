@@ -4,6 +4,9 @@ from functools import cache
 from sec_sem8.connection.passive_connection import PassiveConnection, World
 from sec_sem8.hash_task import PasswordHash
 from sec_sem8.impl import SqliteDatabase
+from sec_sem8.entities import Message, WriteRequest, ReadRequest, parse_request
+from pydantic.json import pydantic_encoder
+import json
 
 database = SqliteDatabase("users.sqlite")
 
@@ -42,7 +45,12 @@ class RealWorld(World):
 world = RealWorld(database)
 
 
+messages: list[Message] = []
+
+
 async def handle_client(reader, writer):
+    global messages
+
     connection = PassiveConnection(reader, writer, world, verbose=True)
 
     try:
@@ -57,7 +65,19 @@ async def handle_client(reader, writer):
         maybe_message = await connection.read_message()
         if maybe_message is None:
             break
-        print(ok.username, "==>", maybe_message)
+
+        request = parse_request(maybe_message)
+
+        if isinstance(request, ReadRequest):
+            await connection.write_message(
+                json.dumps(messages, default=pydantic_encoder)
+            )
+        elif isinstance(request, WriteRequest):
+            text = request.content
+            messages += [Message(author=ok.username, content=text)]
+            print(f"{ok.username} wrote: {text}")
+        else:
+            print(f"got unknown request '{maybe_message}' from {ok.username}")
 
     print(f"closed connection with {ok.username}")
 
