@@ -7,7 +7,12 @@ from sec_sem8.connection.passive_connection import (
     BaseClientMessage,
     BaseServerMessage,
 )
-from sec_sem8.connection.client_messages import DiffieAnswer, ClientData, ClientGoodbye
+from sec_sem8.connection.client_messages import (
+    DiffieAnswer,
+    ClientData,
+    ClientGoodbye,
+    ConnectRequest,
+)
 
 from sec_sem8.connection.server_messages import ServerCryptogramm, DiffieRequest
 
@@ -70,6 +75,9 @@ class MitmProxy:
         return await self.server._read_message()
 
 
+known_messages: list[Message] = []
+
+
 async def handle_client(reader, writer):
     data = {}
 
@@ -92,12 +100,17 @@ async def handle_client(reader, writer):
     client_generator = RC4(1)
     server_generator = RC4(1)
 
-    while not done:
+    author = ""
+
+    while True:
         try:
             message = await passive._read_message()
-            print(message)
             if isinstance(message, ClientGoodbye):
-                done = True
+                await proxy.server._write_message(message)
+                break
+
+            elif isinstance(message, ConnectRequest):
+                author = message.username
             elif isinstance(message, DiffieAnswer):
                 client_shared = pow(message.client_public_value, my_secret, server_p)
                 client_generator = RC4(client_shared)
@@ -108,7 +121,9 @@ async def handle_client(reader, writer):
                 raw = base64.b64decode(message.data)
                 decrypted = xor_bytes(raw, client_generator.produce_gamma(len(raw)))
                 string = decrypted.decode()
-                print("client:", string)
+                deser = parse_request(string)
+                if isinstance(deser, WriteRequest):
+                    print(author, ":", deser.content)
 
                 message = ClientData(
                     data=base64.b64encode(
@@ -138,7 +153,6 @@ async def handle_client(reader, writer):
                 raw = base64.b64decode(resp.content)
                 decrypted = xor_bytes(raw, server_generator.produce_gamma(len(raw)))
                 string = decrypted.decode()
-                print("server:", string)
 
                 resp = ServerCryptogramm(
                     content=base64.b64encode(
