@@ -76,8 +76,10 @@ async def handle_client(reader, writer):
             text = request.content
             messages += [Message(author=ok.username, content=text)]
             print(f"{ok.username} wrote: {text}")
+            await connection.write_message(json.dumps("ack"))
         else:
             print(f"got unknown request '{maybe_message}' from {ok.username}")
+            break
 
     print(f"closed connection with {ok.username}")
 

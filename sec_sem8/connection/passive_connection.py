@@ -1,6 +1,6 @@
 import base64
 from asyncio.streams import StreamReader, StreamWriter
-from typing import NoReturn, Optional
+from typing import NoReturn, Optional, Callable
 
 from sec_sem8.connection.client_messages import (
     BaseClientMessage,
@@ -29,12 +29,16 @@ class PassiveConnection:
         writer: StreamWriter,
         world: World,
         verbose: bool = False,
+        intercept_callback: Optional[
+            Callable[[BaseClientMessage | BaseServerMessage], None]
+        ] = None,
     ) -> None:
         self.verbose = verbose
         self.state: BaseState = Start()
         self.reader = reader
         self.writer = writer
         self.world = world
+        self.intercept_callback = intercept_callback or (lambda _: None)
 
     async def _error_bailout(self, message: str) -> NoReturn:
         self.state = ErrorState(message=message)
@@ -56,11 +60,14 @@ class PassiveConnection:
                 await self._error_bailout(decoded.message)
             if isinstance(decoded, UnknownAnswer):
                 await self._error_bailout("got unknown message")
+
+            self.intercept_callback(decoded)
             return decoded
         except UnicodeDecodeError:
             await self._error_bailout("decode error")
 
     async def _write_message(self, message: BaseServerMessage):
+        self.intercept_callback(message)
         self.writer.write((message.json() + "\n").encode())
         if self.verbose:
             print("sent message:", message)

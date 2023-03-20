@@ -3,7 +3,7 @@ import sys
 import PySimpleGUI as sg
 
 from sec_sem8.connection.active_connection import (
-    ActiveConnection,
+    SyncActiveConnection,
     IncorrectPasswordError,
     UnknownUserError,
 )
@@ -105,8 +105,8 @@ while True:
             try:
                 if conn is not None and conn.is_open():
                     conn.say_goodbye()
-                conn = ActiveConnection(user, server=SERVER_ADDRESS)  # type: ignore
-
+                conn = SyncActiveConnection(user, server=SERVER_ADDRESS, verbose=True)  # type: ignore
+                conn.connect()
             except ConnectionRefusedError:
                 sg.Popup("could not connect to server")
                 continue
@@ -137,11 +137,14 @@ while True:
         data = WriteRequest(content=text)
 
         with lock:
-            conn.write(data.json())  # type: ignore
+            assert conn is not None
+            conn.write(data.json())
+            _ = conn.read()
     elif event == "CLOSE":
         time.sleep(0.5)
         with lock:
-            conn.say_goodbye()  # type: ignore
+            assert conn is not None
+            conn.say_goodbye()
             conn = None
         text_form.update(disabled=True)
         send_btn.update(disabled=True)
